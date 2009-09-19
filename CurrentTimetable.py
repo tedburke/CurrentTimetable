@@ -61,5 +61,5 @@ for n in range(5):
 #	ctx.arc(0.5 + distance * math.cos(angle), 0.5 + distance * math.sin(angle), radius, 0, 2*math.pi)
 #	ctx.fill()
 
-surface.write_to_png ("blobs.png") # Output to PNG
+surface.write_to_png ("tt.png") # Output to PNG
 

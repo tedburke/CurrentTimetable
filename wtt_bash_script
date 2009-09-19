@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# Login to web timetables
+wget --output-document=dummy.html --save-cookies=cookie.txt --keep-session-cookies --post-data "reqtype=login&type=null&appname=unknown&appversion=unknown&username=Student%20Engineering&userpassword=engineering" "http://webtimetables.dit.ie/TTSuiteRBLIVE/PortalServ"
+
+week=4
+
+for year in "1" "2" "3" "4"
+do
+	# Get "grid"/list for DT021 / year (specific week)
+	wget --output-document=dt021-$year.html --cookies=on --load-cookies=cookie.txt --keep-session-cookies --save-cookies=cookie.txt "http://webtimetables.dit.ie/TTSuiteRBLIVE/PortalServ?reqtype=timetable&action=getgrid&sType=class&sKey=200910|DT021|DT021/1|1&sTitle=BE%20in%20Electrical/Electronic%20Engineering&sYear=$year&sWeeks=$week&namevalue=BE%20in%20Electrical/Electronic%20Engineering&instCode=-2&instName="
+
+	# Extract the PDF timetable url from the HTML file
+	#pdfurl=`egrep -o -m 1 http.*\.pdf temp.html`
+done
+

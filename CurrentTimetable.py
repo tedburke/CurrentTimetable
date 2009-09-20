@@ -6,6 +6,49 @@ import math
 import cairo
 from random import *
 
+class Entry:
+	"""A timtable entry"""
+	elements = None
+	day = 0
+	start = ''
+	start_hm = None
+	start_hours = 0
+	start_minutes = 0
+	finish = ''
+	finish_hm = None
+	finish_hours = 0
+	finish_minutes = 0
+	room = ''
+	module_name = ''
+	def __init__(self, html_table_row):
+		elements = re.findall('<td class="gridData">(.*?)</td>',html_table_row,re.DOTALL)
+		if elements[2] == 'Mon':
+			self.day = 1
+		elif elements[2] == 'Tue':
+			self.day = 2
+		elif elements[2] == 'Wed':
+			self.day = 3
+		elif elements[2] == 'Thu':
+			self.day = 4
+		elif elements[2] == 'Fri':
+			self.day = 5
+		self.start = elements[3]
+		start_hm = re.findall('\d\d',self.start)
+		self.start_hours = int(start_hm[0])
+		self.start_minutes = int(start_hm[1])
+		self.finish = elements[4]
+		finish_hm = re.findall('\d\d',self.finish)
+		self.finish_hours = int(finish_hm[0])
+		self.finish_minutes = int(finish_hm[1])
+		self.room = elements[5]
+		self.module_name = elements[8]
+		print('Day ' + str(self.day) + ' ' + self.start + '-' + self.finish + ' ' + self.module_name + ' Room ' + self.room)
+
+class Day:
+	entries = []
+	first_row = 0
+	rows = 1
+
 # Login to webtimetables.dit.ie
 subprocess.call("wget --output-document=dummy.html --save-cookies=cookie.txt --keep-session-cookies --post-data \"reqtype=login&type=null&appname=unknown&appversion=unknown&username=Student%20Engineering&userpassword=engineering\" \"http://webtimetables.dit.ie/TTSuiteRBLIVE/PortalServ\"", shell=True)
 
@@ -23,21 +66,16 @@ html_file = open('dt021-1.html', 'r')
 html_content = html_file.read()
 html_file.close()
 
-entries = re.findall('<tr>(.*?)</tr>',html_content,re.DOTALL)
-for n in range(len(entries)):
-	elements = re.findall('<td class="gridData">(.*?)</td>',entries[n],re.DOTALL)
-	day = elements[2]
-	start = elements[3]
-	start_hm = re.findall('\d\d',start)
-	start_hours = int(start_hm[0])
-	start_minutes = int(start_hm[1])
-	finish = elements[4]
-	finish_hm = re.findall('\d\d',finish)
-	finish_hours = int(finish_hm[0])
-	finish_minutes = int(finish_hm[1])
-	room = elements[5]
-	module_name = elements[8]
-	print(day + ' ' + start + '-' + finish + ' ' + module_name + ' Room ' + room)
+html_table_rows = re.findall('<tr>(.*?)</tr>',html_content,re.DOTALL)
+entries = []
+for n in range(len(html_table_rows)):
+	entries.append(Entry(html_table_rows[n]))
+days = []
+days.append(Day())
+days.append(Day())
+days.append(Day())
+days.append(Day())
+days.append(Day())
 
 quit()
 

@@ -8,46 +8,37 @@ from random import *
 
 class Entry:
 	"""A timtable entry"""
-	elements = None
-	day = 0
-	start = ''
-	start_hm = None
-	start_hours = 0
-	start_minutes = 0
-	finish = ''
-	finish_hm = None
-	finish_hours = 0
-	finish_minutes = 0
-	room = ''
-	module_name = ''
 	def __init__(self, html_table_row):
 		elements = re.findall('<td class="gridData">(.*?)</td>',html_table_row,re.DOTALL)
 		if elements[2] == 'Mon':
-			self.day = 1
+			self.day = 0
 		elif elements[2] == 'Tue':
-			self.day = 2
+			self.day = 1
 		elif elements[2] == 'Wed':
-			self.day = 3
+			self.day = 2
 		elif elements[2] == 'Thu':
-			self.day = 4
+			self.day = 3
 		elif elements[2] == 'Fri':
-			self.day = 5
+			self.day = 4
 		self.start = elements[3]
 		start_hm = re.findall('\d\d',self.start)
-		self.start_hours = int(start_hm[0])
-		self.start_minutes = int(start_hm[1])
+		self.start_hour = int(start_hm[0])
+		self.start_minute = int(start_hm[1])
 		self.finish = elements[4]
 		finish_hm = re.findall('\d\d',self.finish)
-		self.finish_hours = int(finish_hm[0])
-		self.finish_minutes = int(finish_hm[1])
+		self.finish_hour = int(finish_hm[0])
+		self.finish_minute = int(finish_hm[1])
 		self.room = elements[5]
 		self.module_name = elements[8]
+		self.row = 0
 		print('Day ' + str(self.day) + ' ' + self.start + '-' + self.finish + ' ' + self.module_name + ' Room ' + self.room)
 
 class Day:
-	entries = []
-	first_row = 0
-	rows = 1
+	"""This class stores the timetable entries and other properties for one day of the week"""
+	def __init__(self):
+		self.entries = []
+		self.first_row = 0
+		self.maxrow = 0
 
 # Login to webtimetables.dit.ie
 subprocess.call("wget --output-document=dummy.html --save-cookies=cookie.txt --keep-session-cookies --post-data \"reqtype=login&type=null&appname=unknown&appversion=unknown&username=Student%20Engineering&userpassword=engineering\" \"http://webtimetables.dit.ie/TTSuiteRBLIVE/PortalServ\"", shell=True)
@@ -76,6 +67,29 @@ days.append(Day())
 days.append(Day())
 days.append(Day())
 days.append(Day())
+
+for n in range(len(entries)):
+	days[entries[n].day].entries.append(entries[n])
+
+for n in range(len(days)):
+	print('Day ' + str(n) + ': ' + str(len(days[n].entries)) + ' entries')
+	for m in range(len(days[n].entries)):
+		for mm in range(m):
+			if days[n].entries[m].start_hour < days[n].entries[mm].finish_hour:
+				days[n].entries[m].row += 1
+				if days[n].entries[m].row > days[n].maxrow:
+					days[n].maxrow = days[n].entries[m].row
+
+for n in range(len(days)):
+	print('Day ' + str(n) + ': ' + str(days[n].maxrow + 1) + ' rows')
+	for m in range(len(days[n].entries)):
+		print(days[n].entries[m].start + '-' + days[n].entries[m].finish + ', row ' + str(days[n].entries[m].row))
+
+total_rows = 5
+for n in range(len(days)):
+	total_rows += days[n].maxrow
+
+print('Total rows = ' + str(total_rows))
 
 quit()
 

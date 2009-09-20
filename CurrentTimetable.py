@@ -1,19 +1,44 @@
 #!/usr/bin/env python
 
 import subprocess
+import re
 import math
 import cairo
 from random import *
+
+# Login to webtimetables.dit.ie
+subprocess.call("wget --output-document=dummy.html --save-cookies=cookie.txt --keep-session-cookies --post-data \"reqtype=login&type=null&appname=unknown&appversion=unknown&username=Student%20Engineering&userpassword=engineering\" \"http://webtimetables.dit.ie/TTSuiteRBLIVE/PortalServ\"", shell=True)
+
+# Retrieve timetable - i.e. "grid"/list for DT021 /1, week 4
+subprocess.call("wget --output-document=dt021-1.html --cookies=on --load-cookies=cookie.txt --keep-session-cookies --save-cookies=cookie.txt \"http://webtimetables.dit.ie/TTSuiteRBLIVE/PortalServ?reqtype=timetable&action=getgrid&sType=class&sKey=200910|DT021|DT021/1|1&sTitle=BE%20in%20Electrical/Electronic%20Engineering&sYear=1&sWeeks=4&namevalue=BE%20in%20Electrical/Electronic%20Engineering&instCode=-2&instName=\"", shell=True)
+
+# Logout of webtimetables.dit.ie
+subprocess.call("wget --output-document=dummy.html --cookies=on --load-cookies=cookie.txt --keep-session-cookies --save-cookies=cookie.txt \"http://webtimetables.dit.ie/TTSuiteRBLIVE/PortalServ?reqtype=logout\"", shell=True)
 
 # Retrieve HTML file
 subprocess.call("wget --output-document=tt.html --save-cookies=cookie.txt --keep-session-cookies --post-data \"reqtype=login&type=null&appname=unknown&appversion=unknown&username=Student%20Engineering&userpassword=engineering\" \"http://webtimetables.dit.ie/TTSuiteRBLIVE/PortalServ\"", shell=True)
 
 # Read HTML file contents into a string
-html_file = open('tt.html', 'r')
-html_content = f.read()
+html_file = open('dt021-1.html', 'r')
+html_content = html_file.read()
 html_file.close()
 
-print html_content
+entries = re.findall('<tr>(.*?)</tr>',html_content,re.DOTALL)
+for n in range(len(entries)):
+	elements = re.findall('<td class="gridData">(.*?)</td>',entries[n],re.DOTALL)
+	day = elements[2]
+	start = elements[3]
+	start_hm = re.findall('\d\d',start)
+	start_hours = int(start_hm[0])
+	start_minutes = int(start_hm[1])
+	finish = elements[4]
+	finish_hm = re.findall('\d\d',finish)
+	finish_hours = int(finish_hm[0])
+	finish_minutes = int(finish_hm[1])
+	room = elements[5]
+	module_name = elements[8]
+	print(day + ' ' + start + '-' + finish + ' ' + module_name + ' Room ' + room)
+
 quit()
 
 # Extract timetable entries from the HTML string

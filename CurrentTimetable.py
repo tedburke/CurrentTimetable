@@ -1,11 +1,26 @@
 #!/usr/bin/env python
 
+import subprocess
 import math
 import cairo
 from random import *
 
-WIDTH, HEIGHT = 640, 400
+# Retrieve HTML file
+subprocess.call("wget --output-document=tt.html --save-cookies=cookie.txt --keep-session-cookies --post-data \"reqtype=login&type=null&appname=unknown&appversion=unknown&username=Student%20Engineering&userpassword=engineering\" \"http://webtimetables.dit.ie/TTSuiteRBLIVE/PortalServ\"", shell=True)
 
+# Read HTML file contents into a string
+html_file = open('tt.html', 'r')
+html_content = f.read()
+html_file.close()
+
+print html_content
+quit()
+
+# Extract timetable entries from the HTML string
+
+
+# Render timetable as bitmap
+WIDTH, HEIGHT = 640, 400
 surface = cairo.ImageSurface (cairo.FORMAT_ARGB32, WIDTH, HEIGHT)
 ctx = cairo.Context (surface)
 

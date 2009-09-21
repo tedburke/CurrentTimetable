@@ -38,7 +38,7 @@ class Day:
 	def __init__(self):
 		self.entries = []
 		self.first_row = 0
-		self.maxrow = 0
+		self.max_row = 0
 
 # Login to webtimetables.dit.ie
 subprocess.call("wget --output-document=dummy.html --save-cookies=cookie.txt --keep-session-cookies --post-data \"reqtype=login&type=null&appname=unknown&appversion=unknown&username=Student%20Engineering&userpassword=engineering\" \"http://webtimetables.dit.ie/TTSuiteRBLIVE/PortalServ\"", shell=True)
@@ -57,10 +57,19 @@ html_file = open('dt021-1.html', 'r')
 html_content = html_file.read()
 html_file.close()
 
+# Extract timetable entries from HTML table
 html_table_rows = re.findall('<tr>(.*?)</tr>',html_content,re.DOTALL)
 entries = []
+min_hour = 24
+max_hour = 0
 for n in range(len(html_table_rows)):
 	entries.append(Entry(html_table_rows[n]))
+	if entries[n].finish_hour > max_hour:
+		max_hour = entries[n].finish_hour
+	if entries[n].start_hour < min_hour:
+		min_hour = entries[n].start_hour
+
+# Create array of days
 days = []
 days.append(Day())
 days.append(Day())
@@ -68,90 +77,102 @@ days.append(Day())
 days.append(Day())
 days.append(Day())
 
+# Divide up the entries into the five days
 for n in range(len(entries)):
 	days[entries[n].day].entries.append(entries[n])
 
+# Determine the number of rows needed for each day
+# in the timetable (due to concurrent classes)
 for n in range(len(days)):
 	print('Day ' + str(n) + ': ' + str(len(days[n].entries)) + ' entries')
 	for m in range(len(days[n].entries)):
 		for mm in range(m):
 			if days[n].entries[m].start_hour < days[n].entries[mm].finish_hour:
 				days[n].entries[m].row += 1
-				if days[n].entries[m].row > days[n].maxrow:
-					days[n].maxrow = days[n].entries[m].row
+				if days[n].entries[m].row > days[n].max_row:
+					days[n].max_row = days[n].entries[m].row
 
+# Print out info gleaned so far, just for debugging
 for n in range(len(days)):
-	print('Day ' + str(n) + ': ' + str(days[n].maxrow + 1) + ' rows')
+	print('Day ' + str(n) + ': ' + str(days[n].max_row + 1) + ' rows')
 	for m in range(len(days[n].entries)):
 		print(days[n].entries[m].start + '-' + days[n].entries[m].finish + ', row ' + str(days[n].entries[m].row))
 
-total_rows = 5
-for n in range(len(days)):
-	total_rows += days[n].maxrow
+# Calculate the number of rows needed for all five days together
+for n in range(1,len(days)):
+	days[n].first_row = days[n-1].first_row + days[n-1].max_row + 1
 
+total_rows = days[n].first_row + days[n].max_row + 1
+total_hours = max_hour - min_hour
+	
 print('Total rows = ' + str(total_rows))
-
-quit()
-
-# Extract timetable entries from the HTML string
-
+print('total_hours=' + str(total_hours) + ' ' + 'min_hour=' + str(min_hour) + ' max_hour=' + str(max_hour))
 
 # Render timetable as bitmap
-WIDTH, HEIGHT = 640, 400
-surface = cairo.ImageSurface (cairo.FORMAT_ARGB32, WIDTH, HEIGHT)
+image_width, image_height = 1024, 768
+surface = cairo.ImageSurface (cairo.FORMAT_ARGB32, image_width, image_height)
 ctx = cairo.Context (surface)
-
-ctx.scale (WIDTH/1.0, HEIGHT/1.0) # Normalizing the canvas
 
 # draw white background
 ctx.set_source_rgb(1,1,1)
-ctx.rectangle(0,0,1,1)
+ctx.rectangle(0,0,image_width,image_height)
 ctx.fill()
 
-N = 500 # Number of blobs
-rmin = 0.01 # max blob radius
-rmax = 0.05 # min blob radius
-sepmin = 0.005 # mimimum distance between blobs
+# Timetable grid drawing properties
+header_font_size = 40
+entry_font_size = 12
 
-safe_distance = rmax + rmax + sepmin
-
-# Select blue colour
-ctx.set_source_rgb(0,0,1)
-	
-# Create N blobs
-x = []
-y = []
-r = []
-for n in range(N):
-	# Create new blob
-	x.append(random())
-	y.append(random())
-	r.append(rmin + (rmax-rmin)*random())
-	
-# Grow or move all existing blobs
-for i in range(n):
-	for j in range(n):
-		if i!=j and abs(x[j]-x[i])<safe_distance and abs(y[j]-y[i])<safe_distance: #and sqrt((x[j]-x[i])^2 + (y[j]-y[i])^2)
-			d = math.sqrt((x[j]-x[i])**2 + (y[j]-y[i])**2)
-			rsum = r[i] + r[j] + sepmin
-			if rsum > d:
-				r[i] = r[i] - (rsum-sepmin)/2
-				r[j] = r[j] - (rsum-sepmin)/2
-
-for n in range(5):
-	#ctx.arc(x[n], y[n], r[n], 0, 2*math.pi)
-	ctx.set_source_rgb(1.0, 0, 0)
-	ctx.rectangle(int(14*random())/14.0, (1+n)/6.0, int(4*random())/14.0, 1/6.0)
+# Draw timetable grid
+ctx.set_source_rgb(0,0,0)
+ctx.select_font_face("Arial", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)
+ctx.set_font_size(header_font_size)
+x_bearing, y_bearing, text_width, text_height = ctx.text_extents("DT021 stage 1")[:4]
+ctx.move_to(10-x_bearing, 10-y_bearing)
+ctx.show_text("DT021 stage 1")
+row_height = image_height/(total_rows+1)
+hour_width = image_width/(total_hours+2)
+for n in range(len(days)):
+	# Draw background colour for this day
+	if n%2:
+		ctx.set_source_rgb(0.8,0.8,1)
+	else:
+		ctx.set_source_rgb(0.4,0.4,1)
+	ctx.set_line_width(1)
+	left = 0
+	top = (1 + days[n].first_row) * row_height
+	width = (1 + max_hour) * hour_width
+	height = (days[n].max_row + 1) * row_height
+	ctx.rectangle(left,top,width,height)
 	ctx.fill()
-
-#for n in range(N):
-#	print x[n], y[n]
-#	radius = 0.01 + 0.02 * random()
-#	distance = 0.4 * random()
-#	ctx.set_source_rgb(0.5, random(), 0.5)
-#	angle = random() * 2 * math.pi
-#	ctx.arc(0.5 + distance * math.cos(angle), 0.5 + distance * math.sin(angle), radius, 0, 2*math.pi)
-#	ctx.fill()
+	ctx.set_source_rgb(0,0,0)
+	ctx.set_line_width(1)
+	# Draw entries for this day
+	ctx.select_font_face("Arial", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)
+	ctx.set_font_size(entry_font_size)
+	for m in range(len(days[n].entries)):
+		# entry box
+		left = (1 + days[n].entries[m].start_hour - min_hour)*hour_width
+		top = (1 + days[n].first_row + days[n].entries[m].row)*row_height
+		width = (days[n].entries[m].finish_hour - days[n].entries[m].start_hour)*hour_width
+		height = row_height
+		ctx.rectangle(left,top,width,height)
+		ctx.stroke()
+		# entry text
+		top += 5
+		left += 5
+		x_bearing, y_bearing, text_width, text_height = ctx.text_extents(days[n].entries[m].module_name)[:4]
+		ctx.move_to(left - x_bearing, top - y_bearing)
+		ctx.show_text(days[n].entries[m].module_name)
+		top += entry_font_size
+		ctx.move_to(left - x_bearing, top - y_bearing)
+		ctx.show_text(days[n].entries[m].room)
+		top += entry_font_size
+		ctx.move_to(left - x_bearing, top - y_bearing)
+		ctx.show_text(days[n].entries[m].start + '-' + days[n].entries[m].finish)
+	
+#for n in range(5):
+	#ctx.set_source_rgb(1.0, 0, 0)
+	#ctx.rectangle(int(14*random())/14.0, (1+n)/6.0, int(4*random())/14.0, 1/6.0)
+	#ctx.fill()
 
 surface.write_to_png ("tt.png") # Output to PNG
-

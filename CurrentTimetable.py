@@ -120,38 +120,67 @@ ctx.fill()
 
 # Timetable grid drawing properties
 header_font_size = 40
+day_label_font_size = 18
 entry_font_size = 12
-
-# Draw timetable grid
-ctx.set_source_rgb(0,0,0)
+time_font_size = 12
+clearance = 5
+ctx.set_line_width(1)
 ctx.select_font_face("Arial", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)
+# Calculate width of widest day label
+day_margin = 0
+ctx.set_font_size(day_label_font_size)
+for d in ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']:
+	if ctx.text_extents(d)[2] > day_margin:
+		day_margin = ctx.text_extents(d)[2]
+day_margin *= 1.8
+row_height = (image_height)/(total_rows + 1.5) # Extra 0.1 is for small gap at bottom of page
+hour_width = (image_width - day_margin)/(total_hours + 0.5)
+
+# Draw timetable header
+ctx.set_source_rgb(0,0,0)
 ctx.set_font_size(header_font_size)
 x_bearing, y_bearing, text_width, text_height = ctx.text_extents("DT021 stage 1")[:4]
-ctx.move_to(10-x_bearing, 10-y_bearing)
+ctx.move_to(2*clearance - x_bearing, 2*clearance - y_bearing)
 ctx.show_text("DT021 stage 1")
-row_height = image_height/(total_rows+1)
-hour_width = image_width/(total_hours+2)
+
+# Draw time labels
+ctx.set_font_size(time_font_size)
+for h in range(min_hour, max_hour + 1):
+	x_bearing, y_bearing, text_width, text_height = ctx.text_extents(str(h) + ':00')[:4]
+	ctx.move_to(day_margin + (h - min_hour)*hour_width - text_width/2 - x_bearing, row_height - text_height - y_bearing - clearance)
+	ctx.show_text(str(h) + ':00')
+
+# Draw timetable grid
 for n in range(len(days)):
 	# Draw background colour for this day
 	if n%2:
 		ctx.set_source_rgb(0.8,0.8,1)
 	else:
 		ctx.set_source_rgb(0.4,0.4,1)
-	ctx.set_line_width(1)
 	left = 0
 	top = (1 + days[n].first_row) * row_height
-	width = (1 + max_hour) * hour_width
+	width = image_width #(1 + max_hour) * hour_width
 	height = (days[n].max_row + 1) * row_height
 	ctx.rectangle(left,top,width,height)
 	ctx.fill()
+	
+	# Draw label for this day
+	if n == 0: d = 'Mon'
+	elif n == 1: d = 'Tue'
+	elif n == 2: d = 'Wed'
+	elif n == 3: d = 'Thu'
+	elif n == 4: d = 'Fri'
 	ctx.set_source_rgb(0,0,0)
-	ctx.set_line_width(1)
+	ctx.set_font_size(day_label_font_size)
+	x_bearing, y_bearing, text_width, text_height = ctx.text_extents(d)[:4]
+	ctx.move_to(day_margin/2 - text_width/2 - x_bearing, top + height/2 - text_height/2 - y_bearing)
+	ctx.show_text(d)
+	
 	# Draw entries for this day
-	ctx.select_font_face("Arial", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)
 	ctx.set_font_size(entry_font_size)
 	for m in range(len(days[n].entries)):
 		# entry box
-		left = (1 + days[n].entries[m].start_hour - min_hour)*hour_width
+		left = day_margin + (days[n].entries[m].start_hour - min_hour)*hour_width
 		top = (1 + days[n].first_row + days[n].entries[m].row)*row_height
 		width = (days[n].entries[m].finish_hour - days[n].entries[m].start_hour)*hour_width
 		height = row_height

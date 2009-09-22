@@ -104,7 +104,8 @@ def render_timetable(input_filename, output_filename, title):
 	print('total_hours=' + str(total_hours) + ' ' + 'min_hour=' + str(min_hour) + ' max_hour=' + str(max_hour))
 
 	# Render timetable as bitmap
-	image_width, image_height = 1024, 768
+	#image_width, image_height = 1024, 768
+	image_width, image_height = 1280, 1024
 	surface = cairo.ImageSurface (cairo.FORMAT_ARGB32, image_width, image_height)
 	ctx = cairo.Context (surface)
 
@@ -116,8 +117,8 @@ def render_timetable(input_filename, output_filename, title):
 	# Timetable grid drawing properties
 	header_font_size = 40
 	day_label_font_size = 18
-	entry_font_size = 12
-	time_font_size = 12
+	entry_font_size = 14
+	time_font_size = 14
 	clearance = 5
 	ctx.set_line_width(1)
 	ctx.select_font_face("Arial", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)

@@ -239,7 +239,7 @@ html_content = html_file.read()
 html_file.close()
 week_number = re.findall('This week is week number (\d*)', html_content, re.DOTALL)
 week_number = week_number[0]
-week_number = '4'
+#week_number = '4'
 
 # Retrieve timetable - i.e. "grid"/list for DT021 years 1 to 4, for this week
 for year in range(1,5):
@@ -261,3 +261,5 @@ render_timetable("DT009-1.html", "DT009-1.png", "DT009 year 1")
 render_timetable("DT009-2.html", "DT009-2.png", "DT009 year 2")
 render_timetable("DT009-3.html", "DT009-3.png", "DT009 year 3")
 
+# Print week number to console
+print "Week number: " + str(week_number)
